@@ -1,0 +1,1096 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="viewport" content="initial-scale=1,user-scalable=no,maximum-scale=1,width=device-width">
+        <meta name="mobile-web-app-capable" content="yes">
+        <meta name="apple-mobile-web-app-capable" content="yes">
+        <link rel="stylesheet" href="css/leaflet.css">
+        <link rel="stylesheet" href="css/L.Control.Layers.Tree.css">
+        <link rel="stylesheet" href="css/L.Control.Locate.min.css">
+        <link rel="stylesheet" href="css/qgis2web.css">
+        <link rel="stylesheet" href="css/fontawesome-all.min.css">
+        <link rel="stylesheet" href="css/filter.css">
+<link rel="stylesheet" href="css/nouislider.min.css">
+        <link rel="stylesheet" href="css/leaflet.photon.css">
+        <style>
+        #map {
+            width: 369px;
+            height: 658px;
+        }
+        </style>
+        <title></title>
+    </head>
+    <body>
+        <div id="map">
+        </div>
+        <script src="js/qgis2web_expressions.js"></script>
+        <script src="js/leaflet.js"></script>
+        <script src="js/L.Control.Layers.Tree.min.js"></script>
+        <script src="js/L.Control.Locate.min.js"></script>
+        <script src="js/leaflet.rotatedMarker.js"></script>
+        <script src="js/leaflet.pattern.js"></script>
+        <script src="js/leaflet-hash.js"></script>
+        <script src="js/Autolinker.min.js"></script>
+        <script src="js/rbush.min.js"></script>
+        <script src="js/labelgun.min.js"></script>
+        <script src="js/labels.js"></script>
+        <script src="js/leaflet.photon.js"></script>
+        <script src="js/tailDT.js"></script>
+<script src="js/nouislider.min.js"></script>
+<script src="js/wNumb.js"></script>
+        <script src="data/APAR_WISATA_1.js"></script>
+        <script src="data/penggunaan_lahan_2026_ok_2.js"></script>
+        <script src="data/WISATA_MANGROVE_APAR_3.js"></script>
+        <script src="data/sapras2_4.js"></script>
+        <script src="data/sapras_115_5.js"></script>
+        <script src="data/APAR_6.js"></script>
+        <script src="data/Vegetasititik_7.js"></script>
+        <script>
+        var map = L.map('map', {
+            zoomControl:false, maxZoom:28, minZoom:1
+        }).fitBounds([[-0.6059572487336193,100.10473525971464],[-0.5929686621276722,100.11200174033108]]);
+        var hash = new L.Hash(map);
+        map.attributionControl.setPrefix('<a href="https://github.com/tomchadwin/qgis2web" target="_blank">qgis2web</a> &middot; <a href="https://leafletjs.com" title="A JS library for interactive maps">Leaflet</a> &middot; <a href="https://qgis.org">QGIS</a>');
+        var autolinker = new Autolinker({truncate: {length: 30, location: 'smart'}});
+        // remove popup's row if "visible-with-data"
+        function removeEmptyRowsFromPopupContent(content, feature) {
+         var tempDiv = document.createElement('div');
+         tempDiv.innerHTML = content;
+         var rows = tempDiv.querySelectorAll('tr');
+         for (var i = 0; i < rows.length; i++) {
+             var td = rows[i].querySelector('td.visible-with-data');
+             var key = td ? td.id : '';
+             if (td && td.classList.contains('visible-with-data') && feature.properties[key] == null) {
+                 rows[i].parentNode.removeChild(rows[i]);
+             }
+         }
+         return tempDiv.innerHTML;
+        }
+        // modify popup if contains media
+        function addClassToPopupIfMedia(content, popup) {
+            var tempDiv = document.createElement('div');
+            tempDiv.innerHTML = content;
+            var imgTd = tempDiv.querySelector('td img');
+            if (imgTd) {
+                var src = imgTd.getAttribute('src');
+                if (/\.(jpg|jpeg|png|gif|bmp|webp|avif)$/i.test(src)) {
+                    popup._contentNode.classList.add('media');
+                    setTimeout(function() {
+                        popup.update();
+                    }, 10);
+                } else if (/\.(mp3|wav|ogg|aac)$/i.test(src)) {
+                    var audio = document.createElement('audio');
+                    audio.controls = true;
+                    audio.src = src;
+                    imgTd.parentNode.replaceChild(audio, imgTd);
+                    popup._contentNode.classList.add('media');
+                    setTimeout(function() {
+                        popup.setContent(tempDiv.innerHTML);
+                        popup.update();
+                    }, 10);
+                } else if (/\.(mp4|webm|ogg|mov)$/i.test(src)) {
+                    var video = document.createElement('video');
+                    video.controls = true;
+                    video.src = src;
+                    video.style.width = "400px";
+                    video.style.height = "300px";
+                    video.style.maxHeight = "60vh";
+                    video.style.maxWidth = "60vw";
+                    imgTd.parentNode.replaceChild(video, imgTd);
+                    popup._contentNode.classList.add('media');
+                    // Aggiorna il popup quando il video carica i metadati
+                    video.addEventListener('loadedmetadata', function() {
+                        popup.update();
+                    });
+                    setTimeout(function() {
+                        popup.setContent(tempDiv.innerHTML);
+                        popup.update();
+                    }, 10);
+                } else {
+                    popup._contentNode.classList.remove('media');
+                }
+            } else {
+                popup._contentNode.classList.remove('media');
+            }
+        }
+        var zoomControl = L.control.zoom({
+            position: 'topleft'
+        }).addTo(map);
+        L.control.locate({locateOptions: {maxZoom: 19}}).addTo(map);
+        var bounds_group = new L.featureGroup([]);
+        function setBounds() {
+        }
+        map.createPane('pane_GoogleSatellite_0');
+        map.getPane('pane_GoogleSatellite_0').style.zIndex = 400;
+        var layer_GoogleSatellite_0 = L.tileLayer('https://mt1.google.com/vt/lyrs=s&x={x}&y={y}&z={z}', {
+            pane: 'pane_GoogleSatellite_0',
+            opacity: 1.0,
+            attribution: '<a href="https://www.google.at/permissions/geoguidelines/attr-guide.html">Map data ©2015 Google</a>',
+            minZoom: 1,
+            maxZoom: 28,
+            minNativeZoom: 0,
+            maxNativeZoom: 20
+        });
+        layer_GoogleSatellite_0;
+        map.addLayer(layer_GoogleSatellite_0);
+        function pop_APAR_WISATA_1(feature, layer) {
+            var popupContent = '<table>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['PROVINSI'] !== null ? autolinker.link(String(feature.properties['PROVINSI']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['KECAMATAN'] !== null ? autolinker.link(String(feature.properties['KECAMATAN']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['DESA'] !== null ? autolinker.link(String(feature.properties['DESA']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['SUMBER'] !== null ? autolinker.link(String(feature.properties['SUMBER']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['KODE2010'] !== null ? autolinker.link(String(feature.properties['KODE2010']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['PROVNO'] !== null ? autolinker.link(String(feature.properties['PROVNO']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['KABKOTNO'] !== null ? autolinker.link(String(feature.properties['KABKOTNO']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['KECNO'] !== null ? autolinker.link(String(feature.properties['KECNO']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['DESANO'] !== null ? autolinker.link(String(feature.properties['DESANO']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['KABKOT'] !== null ? autolinker.link(String(feature.properties['KABKOT']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                </table>';
+            var content = removeEmptyRowsFromPopupContent(popupContent, feature);
+			layer.on('popupopen', function(e) {
+				addClassToPopupIfMedia(content, e.popup);
+			});
+			layer.bindPopup(content, { maxHeight: 400 });
+        }
+
+        function style_APAR_WISATA_1_0() {
+            return {
+                pane: 'pane_APAR_WISATA_1',
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(141,90,153,1.0)',
+                interactive: true,
+            }
+        }
+        map.createPane('pane_APAR_WISATA_1');
+        map.getPane('pane_APAR_WISATA_1').style.zIndex = 401;
+        map.getPane('pane_APAR_WISATA_1').style['mix-blend-mode'] = 'normal';
+        var layer_APAR_WISATA_1 = new L.geoJson(json_APAR_WISATA_1, {
+            attribution: '',
+            interactive: true,
+            dataVar: 'json_APAR_WISATA_1',
+            layerName: 'layer_APAR_WISATA_1',
+            pane: 'pane_APAR_WISATA_1',
+            onEachFeature: pop_APAR_WISATA_1,
+            style: style_APAR_WISATA_1_0,
+        });
+        bounds_group.addLayer(layer_APAR_WISATA_1);
+        function pop_penggunaan_lahan_2026_ok_2(feature, layer) {
+            var popupContent = '<table>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['BIGSNI'] !== null ? autolinker.link(String(feature.properties['BIGSNI']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['Luas'] !== null ? autolinker.link(String(feature.properties['Luas']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                </table>';
+            var content = removeEmptyRowsFromPopupContent(popupContent, feature);
+			layer.on('popupopen', function(e) {
+				addClassToPopupIfMedia(content, e.popup);
+			});
+			layer.bindPopup(content, { maxHeight: 400 });
+        }
+
+        function style_penggunaan_lahan_2026_ok_2_0(feature) {
+            switch(String(feature.properties['BIGSNI'])) {
+                case 'Badan Air':
+                    return {
+                pane: 'pane_penggunaan_lahan_2026_ok_2',
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(114,226,140,1.0)',
+                interactive: true,
+            }
+                    break;
+                case 'Hutan Mangrove':
+                    return {
+                pane: 'pane_penggunaan_lahan_2026_ok_2',
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(203,208,47,1.0)',
+                interactive: true,
+            }
+                    break;
+                case 'Hutan Tanaman':
+                    return {
+                pane: 'pane_penggunaan_lahan_2026_ok_2',
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(80,158,218,1.0)',
+                interactive: true,
+            }
+                    break;
+                case 'Lahan Terbuka':
+                    return {
+                pane: 'pane_penggunaan_lahan_2026_ok_2',
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(121,117,237,1.0)',
+                interactive: true,
+            }
+                    break;
+                case 'Perkebunan':
+                    return {
+                pane: 'pane_penggunaan_lahan_2026_ok_2',
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(169,50,237,1.0)',
+                interactive: true,
+            }
+                    break;
+                case 'Perkebunan Campuran':
+                    return {
+                pane: 'pane_penggunaan_lahan_2026_ok_2',
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(212,116,43,1.0)',
+                interactive: true,
+            }
+                    break;
+                case 'Permukiman':
+                    return {
+                pane: 'pane_penggunaan_lahan_2026_ok_2',
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(135,234,78,1.0)',
+                interactive: true,
+            }
+                    break;
+                case 'Sawah':
+                    return {
+                pane: 'pane_penggunaan_lahan_2026_ok_2',
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(120,231,211,1.0)',
+                interactive: true,
+            }
+                    break;
+                case 'Semak Belukar':
+                    return {
+                pane: 'pane_penggunaan_lahan_2026_ok_2',
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(229,91,114,1.0)',
+                interactive: true,
+            }
+                    break;
+                default:
+                    return {
+                pane: 'pane_penggunaan_lahan_2026_ok_2',
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(224,117,199,1.0)',
+                interactive: true,
+            }
+                    break;
+                default:
+                    return {
+                pane: 'pane_penggunaan_lahan_2026_ok_2',
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(152,125,183,1.0)',
+                interactive: true,
+            }
+                    break;
+            }
+        }
+        map.createPane('pane_penggunaan_lahan_2026_ok_2');
+        map.getPane('pane_penggunaan_lahan_2026_ok_2').style.zIndex = 402;
+        map.getPane('pane_penggunaan_lahan_2026_ok_2').style['mix-blend-mode'] = 'normal';
+        var layer_penggunaan_lahan_2026_ok_2 = new L.geoJson(json_penggunaan_lahan_2026_ok_2, {
+            attribution: '',
+            interactive: true,
+            dataVar: 'json_penggunaan_lahan_2026_ok_2',
+            layerName: 'layer_penggunaan_lahan_2026_ok_2',
+            pane: 'pane_penggunaan_lahan_2026_ok_2',
+            onEachFeature: pop_penggunaan_lahan_2026_ok_2,
+            style: style_penggunaan_lahan_2026_ok_2_0,
+        });
+        bounds_group.addLayer(layer_penggunaan_lahan_2026_ok_2);
+        map.addLayer(layer_penggunaan_lahan_2026_ok_2);
+        function pop_WISATA_MANGROVE_APAR_3(feature, layer) {
+            var popupContent = '<table>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['PROVINSI'] !== null ? autolinker.link(String(feature.properties['PROVINSI']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['KECAMATAN'] !== null ? autolinker.link(String(feature.properties['KECAMATAN']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['DESA'] !== null ? autolinker.link(String(feature.properties['DESA']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['SUMBER'] !== null ? autolinker.link(String(feature.properties['SUMBER']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['KODE2010'] !== null ? autolinker.link(String(feature.properties['KODE2010']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['PROVNO'] !== null ? autolinker.link(String(feature.properties['PROVNO']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['KABKOTNO'] !== null ? autolinker.link(String(feature.properties['KABKOTNO']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['KECNO'] !== null ? autolinker.link(String(feature.properties['KECNO']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['DESANO'] !== null ? autolinker.link(String(feature.properties['DESANO']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['KABKOT'] !== null ? autolinker.link(String(feature.properties['KABKOT']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                </table>';
+            var content = removeEmptyRowsFromPopupContent(popupContent, feature);
+			layer.on('popupopen', function(e) {
+				addClassToPopupIfMedia(content, e.popup);
+			});
+			layer.bindPopup(content, { maxHeight: 400 });
+        }
+
+        function style_WISATA_MANGROVE_APAR_3_0() {
+            return {
+                pane: 'pane_WISATA_MANGROVE_APAR_3',
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(166,206,227,1.0)',
+                interactive: true,
+            }
+        }
+        map.createPane('pane_WISATA_MANGROVE_APAR_3');
+        map.getPane('pane_WISATA_MANGROVE_APAR_3').style.zIndex = 403;
+        map.getPane('pane_WISATA_MANGROVE_APAR_3').style['mix-blend-mode'] = 'normal';
+        var layer_WISATA_MANGROVE_APAR_3 = new L.geoJson(json_WISATA_MANGROVE_APAR_3, {
+            attribution: '',
+            interactive: true,
+            dataVar: 'json_WISATA_MANGROVE_APAR_3',
+            layerName: 'layer_WISATA_MANGROVE_APAR_3',
+            pane: 'pane_WISATA_MANGROVE_APAR_3',
+            onEachFeature: pop_WISATA_MANGROVE_APAR_3,
+            style: style_WISATA_MANGROVE_APAR_3_0,
+        });
+        bounds_group.addLayer(layer_WISATA_MANGROVE_APAR_3);
+        map.addLayer(layer_WISATA_MANGROVE_APAR_3);
+        function pop_sapras2_4(feature, layer) {
+            var popupContent = '<table>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['Id'] !== null ? autolinker.link(String(feature.properties['Id']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['keterangan'] !== null ? autolinker.link(String(feature.properties['keterangan']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                </table>';
+            var content = removeEmptyRowsFromPopupContent(popupContent, feature);
+			layer.on('popupopen', function(e) {
+				addClassToPopupIfMedia(content, e.popup);
+			});
+			layer.bindPopup(content, { maxHeight: 400 });
+        }
+
+        function style_sapras2_4_0() {
+            return {
+                pane: 'pane_sapras2_4',
+                radius: 4.0,
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1,
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(164,113,88,1.0)',
+                interactive: true,
+            }
+        }
+        map.createPane('pane_sapras2_4');
+        map.getPane('pane_sapras2_4').style.zIndex = 404;
+        map.getPane('pane_sapras2_4').style['mix-blend-mode'] = 'normal';
+        var layer_sapras2_4 = new L.geoJson(json_sapras2_4, {
+            attribution: '',
+            interactive: true,
+            dataVar: 'json_sapras2_4',
+            layerName: 'layer_sapras2_4',
+            pane: 'pane_sapras2_4',
+            onEachFeature: pop_sapras2_4,
+            pointToLayer: function (feature, latlng) {
+                var context = {
+                    feature: feature,
+                    variables: {}
+                };
+                return L.circleMarker(latlng, style_sapras2_4_0(feature));
+            },
+        });
+        bounds_group.addLayer(layer_sapras2_4);
+        map.addLayer(layer_sapras2_4);
+        function pop_sapras_115_5(feature, layer) {
+            var popupContent = '<table>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['Id'] !== null ? autolinker.link(String(feature.properties['Id']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['Keterangan'] !== null ? autolinker.link(String(feature.properties['Keterangan']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                </table>';
+            var content = removeEmptyRowsFromPopupContent(popupContent, feature);
+			layer.on('popupopen', function(e) {
+				addClassToPopupIfMedia(content, e.popup);
+			});
+			layer.bindPopup(content, { maxHeight: 400 });
+        }
+
+        function style_sapras_115_5_0() {
+            return {
+                pane: 'pane_sapras_115_5',
+                radius: 5.2,
+                opacity: 1,
+                color: 'rgba(50,87,128,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 2.0,
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(229,140,221,1.0)',
+                interactive: true,
+            }
+        }
+        map.createPane('pane_sapras_115_5');
+        map.getPane('pane_sapras_115_5').style.zIndex = 405;
+        map.getPane('pane_sapras_115_5').style['mix-blend-mode'] = 'normal';
+        var layer_sapras_115_5 = new L.geoJson(json_sapras_115_5, {
+            attribution: '',
+            interactive: true,
+            dataVar: 'json_sapras_115_5',
+            layerName: 'layer_sapras_115_5',
+            pane: 'pane_sapras_115_5',
+            onEachFeature: pop_sapras_115_5,
+            pointToLayer: function (feature, latlng) {
+                var context = {
+                    feature: feature,
+                    variables: {}
+                };
+                return L.circleMarker(latlng, style_sapras_115_5_0(feature));
+            },
+        });
+        bounds_group.addLayer(layer_sapras_115_5);
+        map.addLayer(layer_sapras_115_5);
+        function pop_APAR_6(feature, layer) {
+            var popupContent = '<table>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['PROVINSI'] !== null ? autolinker.link(String(feature.properties['PROVINSI']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['KECAMATAN'] !== null ? autolinker.link(String(feature.properties['KECAMATAN']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['DESA'] !== null ? autolinker.link(String(feature.properties['DESA']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['SUMBER'] !== null ? autolinker.link(String(feature.properties['SUMBER']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['KODE2010'] !== null ? autolinker.link(String(feature.properties['KODE2010']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['PROVNO'] !== null ? autolinker.link(String(feature.properties['PROVNO']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['KABKOTNO'] !== null ? autolinker.link(String(feature.properties['KABKOTNO']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['KECNO'] !== null ? autolinker.link(String(feature.properties['KECNO']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['DESANO'] !== null ? autolinker.link(String(feature.properties['DESANO']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['KABKOT'] !== null ? autolinker.link(String(feature.properties['KABKOT']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                </table>';
+            var content = removeEmptyRowsFromPopupContent(popupContent, feature);
+			layer.on('popupopen', function(e) {
+				addClassToPopupIfMedia(content, e.popup);
+			});
+			layer.bindPopup(content, { maxHeight: 400 });
+        }
+
+        function style_APAR_6_0() {
+            return {
+                pane: 'pane_APAR_6',
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(190,207,80,0.0)',
+                interactive: true,
+            }
+        }
+        map.createPane('pane_APAR_6');
+        map.getPane('pane_APAR_6').style.zIndex = 406;
+        map.getPane('pane_APAR_6').style['mix-blend-mode'] = 'normal';
+        var layer_APAR_6 = new L.geoJson(json_APAR_6, {
+            attribution: '',
+            interactive: true,
+            dataVar: 'json_APAR_6',
+            layerName: 'layer_APAR_6',
+            pane: 'pane_APAR_6',
+            onEachFeature: pop_APAR_6,
+            style: style_APAR_6_0,
+        });
+        bounds_group.addLayer(layer_APAR_6);
+        map.addLayer(layer_APAR_6);
+        function pop_Vegetasititik_7(feature, layer) {
+            var popupContent = '<table>\
+                    <tr>\
+                        <th scope="row">Nama Lokal</th>\
+                        <td>' + (feature.properties['nama_lokal'] !== null ? autolinker.link(String(feature.properties['nama_lokal']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">Nama Ilmiah </th>\
+                        <td>' + (feature.properties['nama_illmiah'] !== null ? autolinker.link(String(feature.properties['nama_illmiah']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">Kategori</th>\
+                        <td>' + (feature.properties['kategori'] !== null ? autolinker.link(String(feature.properties['kategori']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">Famili</th>\
+                        <td>' + (feature.properties['famili'] !== null ? autolinker.link(String(feature.properties['famili']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">Deskripsi</th>\
+                        <td>' + (feature.properties['deskripsi'] !== null ? autolinker.link(String(feature.properties['deskripsi']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">Foto</th>\
+                        <td>' + (feature.properties['foto'] !== null ? '<img src="images/' + String(feature.properties['foto']).replace(/[\\/:]/g, '_').trim().replace(/'/g, '\'').replace(/"/g, '&quot;') + '">' : '') + '</td>\
+                    </tr>\
+                </table>';
+            var content = removeEmptyRowsFromPopupContent(popupContent, feature);
+			layer.on('popupopen', function(e) {
+				addClassToPopupIfMedia(content, e.popup);
+			});
+			layer.bindPopup(content, { maxHeight: 400 });
+        }
+
+        function style_Vegetasititik_7_0(feature) {
+            switch(String(feature.properties['kategori'])) {
+                case 'Lainnya':
+                    return {
+                pane: 'pane_Vegetasititik_7',
+                radius: 4.0,
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1,
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(124,227,95,1.0)',
+                interactive: true,
+            }
+                    break;
+                case 'Mangorave':
+                    return {
+                pane: 'pane_Vegetasititik_7',
+                radius: 4.0,
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1,
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(205,114,78,1.0)',
+                interactive: true,
+            }
+                    break;
+                case 'Mangrove':
+                    return {
+                pane: 'pane_Vegetasititik_7',
+                radius: 4.0,
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1,
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(218,222,92,1.0)',
+                interactive: true,
+            }
+                    break;
+                case 'Mangrove  asosiasi':
+                    return {
+                pane: 'pane_Vegetasititik_7',
+                radius: 4.0,
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1,
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(53,50,209,1.0)',
+                interactive: true,
+            }
+                    break;
+                case 'Nipah':
+                    return {
+                pane: 'pane_Vegetasititik_7',
+                radius: 4.0,
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1,
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(35,182,236,1.0)',
+                interactive: true,
+            }
+                    break;
+                case 'Pedada':
+                    return {
+                pane: 'pane_Vegetasititik_7',
+                radius: 4.0,
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1,
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(201,72,240,1.0)',
+                interactive: true,
+            }
+                    break;
+                case 'Vegetasi Pantai':
+                    return {
+                pane: 'pane_Vegetasititik_7',
+                radius: 4.0,
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1,
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(220,32,120,1.0)',
+                interactive: true,
+            }
+                    break;
+                default:
+                    return {
+                pane: 'pane_Vegetasititik_7',
+                radius: 4.0,
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1,
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(80,223,154,1.0)',
+                interactive: true,
+            }
+                    break;
+            }
+        }
+        map.createPane('pane_Vegetasititik_7');
+        map.getPane('pane_Vegetasititik_7').style.zIndex = 407;
+        map.getPane('pane_Vegetasititik_7').style['mix-blend-mode'] = 'normal';
+        var layer_Vegetasititik_7 = new L.geoJson(json_Vegetasititik_7, {
+            attribution: '',
+            interactive: true,
+            dataVar: 'json_Vegetasititik_7',
+            layerName: 'layer_Vegetasititik_7',
+            pane: 'pane_Vegetasititik_7',
+            onEachFeature: pop_Vegetasititik_7,
+            pointToLayer: function (feature, latlng) {
+                var context = {
+                    feature: feature,
+                    variables: {}
+                };
+                return L.circleMarker(latlng, style_Vegetasititik_7_0(feature));
+            },
+        });
+        bounds_group.addLayer(layer_Vegetasititik_7);
+        map.addLayer(layer_Vegetasititik_7);
+        var overlaysTree = [
+            {label: ' Vegetasi titik<br /><table><tr><td style="text-align: center;"><img src="legend/Vegetasititik_7_Lainnya0.png" /></td><td>Lainnya</td></tr><tr><td style="text-align: center;"><img src="legend/Vegetasititik_7_Mangorave1.png" /></td><td>(Mangorave)</td></tr><tr><td style="text-align: center;"><img src="legend/Vegetasititik_7_Mangrove2.png" /></td><td>Mangrove</td></tr><tr><td style="text-align: center;"><img src="legend/Vegetasititik_7_Mangroveasosiasi3.png" /></td><td>(Mangrove  asosiasi)</td></tr><tr><td style="text-align: center;"><img src="legend/Vegetasititik_7_Nipah4.png" /></td><td>(Nipah)</td></tr><tr><td style="text-align: center;"><img src="legend/Vegetasititik_7_Pedada5.png" /></td><td>(Pedada)</td></tr><tr><td style="text-align: center;"><img src="legend/Vegetasititik_7_VegetasiPantai6.png" /></td><td>Vegetasi Pantai</td></tr><tr><td style="text-align: center;"><img src="legend/Vegetasititik_7_7.png" /></td><td></td></tr></table>', layer: layer_Vegetasititik_7},
+            {label: '<img src="legend/APAR_6.png" /> APAR', layer: layer_APAR_6},
+            {label: '<img src="legend/sapras_115_5.png" /> sapras_1-15', layer: layer_sapras_115_5},
+            {label: '<img src="legend/sapras2_4.png" /> sapras 2', layer: layer_sapras2_4},
+            {label: '<img src="legend/WISATA_MANGROVE_APAR_3.png" /> WISATA_MANGROVE_APAR', layer: layer_WISATA_MANGROVE_APAR_3},
+            {label: 'penggunaan_lahan_2026_ok<br /><table><tr><td style="text-align: center;"><img src="legend/penggunaan_lahan_2026_ok_2_BadanAir0.png" /></td><td>Badan Air</td></tr><tr><td style="text-align: center;"><img src="legend/penggunaan_lahan_2026_ok_2_HutanMangrove1.png" /></td><td>Hutan Mangrove</td></tr><tr><td style="text-align: center;"><img src="legend/penggunaan_lahan_2026_ok_2_HutanTanaman2.png" /></td><td>Hutan Tanaman</td></tr><tr><td style="text-align: center;"><img src="legend/penggunaan_lahan_2026_ok_2_LahanTerbuka3.png" /></td><td>Lahan Terbuka</td></tr><tr><td style="text-align: center;"><img src="legend/penggunaan_lahan_2026_ok_2_Perkebunan4.png" /></td><td>Perkebunan</td></tr><tr><td style="text-align: center;"><img src="legend/penggunaan_lahan_2026_ok_2_PerkebunanCampuran5.png" /></td><td>Perkebunan Campuran</td></tr><tr><td style="text-align: center;"><img src="legend/penggunaan_lahan_2026_ok_2_Permukiman6.png" /></td><td>Permukiman</td></tr><tr><td style="text-align: center;"><img src="legend/penggunaan_lahan_2026_ok_2_Sawah7.png" /></td><td>Sawah</td></tr><tr><td style="text-align: center;"><img src="legend/penggunaan_lahan_2026_ok_2_SemakBelukar8.png" /></td><td>Semak Belukar</td></tr><tr><td style="text-align: center;"><img src="legend/penggunaan_lahan_2026_ok_2_9.png" /></td><td></td></tr><tr><td style="text-align: center;"><img src="legend/penggunaan_lahan_2026_ok_2_10.png" /></td><td></td></tr></table>', layer: layer_penggunaan_lahan_2026_ok_2},
+            {label: '<img src="legend/APAR_WISATA_1.png" /> APAR_WISATA', layer: layer_APAR_WISATA_1},
+            {label: "Google Satellite", layer: layer_GoogleSatellite_0},]
+        var lay = L.control.layers.tree(null, overlaysTree,{
+            //namedToggle: true,
+            //selectorBack: false,
+            //closedSymbol: '&#8862; &#x1f5c0;',
+            //openedSymbol: '&#8863; &#x1f5c1;',
+            //collapseAll: 'Collapse all',
+            //expandAll: 'Expand all',
+            collapsed: false, 
+        });
+        lay.addTo(map);
+		document.addEventListener("DOMContentLoaded", function() {
+            // set new Layers List height which considers toggle icon
+            function newLayersListHeight() {
+                var layerScrollbarElement = document.querySelector('.leaflet-control-layers-scrollbar');
+                if (layerScrollbarElement) {
+                    var layersListElement = document.querySelector('.leaflet-control-layers-list');
+                    var originalHeight = layersListElement.style.height 
+                        || window.getComputedStyle(layersListElement).height;
+                    var newHeight = parseFloat(originalHeight) - 50;
+                    layersListElement.style.height = newHeight + 'px';
+                }
+            }
+            var isLayersListExpanded = true;
+            var controlLayersElement = document.querySelector('.leaflet-control-layers');
+            var toggleLayerControl = document.querySelector('.leaflet-control-layers-toggle');
+            // toggle Collapsed/Expanded and apply new Layers List height
+            toggleLayerControl.addEventListener('click', function() {
+                if (isLayersListExpanded) {
+                    controlLayersElement.classList.remove('leaflet-control-layers-expanded');
+                } else {
+                    controlLayersElement.classList.add('leaflet-control-layers-expanded');
+                }
+                isLayersListExpanded = !isLayersListExpanded;
+                newLayersListHeight()
+            });	
+			// apply new Layers List height if toggle layerstree
+			if (controlLayersElement) {
+				controlLayersElement.addEventListener('click', function(event) {
+					var toggleLayerHeaderPointer = event.target.closest('.leaflet-layerstree-header-pointer span');
+					if (toggleLayerHeaderPointer) {
+						newLayersListHeight();
+					}
+				});
+			}
+            // Collapsed/Expanded at Start to apply new height
+            setTimeout(function() {
+                toggleLayerControl.click();
+            }, 10);
+            setTimeout(function() {
+                toggleLayerControl.click();
+            }, 10);
+            // Collapsed touch/small screen
+            var isSmallScreen = window.innerWidth < 650;
+            if (isSmallScreen) {
+                setTimeout(function() {
+                    controlLayersElement.classList.remove('leaflet-control-layers-expanded');
+                    isLayersListExpanded = !isLayersListExpanded;
+                }, 500);
+            }  
+        });       
+        setBounds();
+        var i = 0;
+        layer_Vegetasititik_7.eachLayer(function(layer) {
+            var context = {
+                feature: layer.feature,
+                variables: {}
+            };
+            layer.bindTooltip((layer.feature.properties['nama_lokal'] !== null?String('<div style="color: #323232; font-size: 10pt; font-family: \'Cambria\', sans-serif;">' + layer.feature.properties['nama_lokal']) + '</div>':''), {permanent: true, offset: [-0, -16], className: 'css_Vegetasititik_7'});
+            labels.push(layer);
+            totalMarkers += 1;
+              layer.added = true;
+              addLabel(layer, i);
+              i++;
+        });
+        var mapDiv = document.getElementById('map');
+        var row = document.createElement('div');
+        row.className="row";
+        row.id="all";
+        row.style.height = "100%";
+        var col1 = document.createElement('div');
+        col1.className="col9";
+        col1.id = "mapWindow";
+        col1.style.height = "99%";
+        col1.style.width = "80%";
+        col1.style.display = "inline-block";
+        var col2 = document.createElement('div');
+        col2.className="col3";
+        col2.id = "menu";
+        col2.style.display = "inline-block";
+        mapDiv.parentNode.insertBefore(row, mapDiv);
+        document.getElementById("all").appendChild(col1);
+        document.getElementById("all").appendChild(col2);
+        col1.appendChild(mapDiv)
+        var Filters = {"deskripsi": "str"};
+        function filterFunc() {
+          map.eachLayer(function(lyr){
+          if ("options" in lyr && "dataVar" in lyr["options"]){
+            features = this[lyr["options"]["dataVar"]].features.slice(0);
+            try{
+              for (key in Filters){
+                keyS = key.replace(/[^a-zA-Z0-9_]/g, "")
+                if (Filters[key] == "str" || Filters[key] == "bool"){
+                  var selection = [];
+                  var options = document.getElementById("sel_" + keyS).options
+                  for (var i=0; i < options.length; i++) {
+                    if (options[i].selected) selection.push(options[i].value);
+                  }
+                    try{
+                      if (key in features[0].properties){
+                        for (i = features.length - 1;
+                          i >= 0; --i){
+                          if (selection.indexOf(
+                          features[i].properties[key])<0
+                          && selection.length>0) {
+                          features.splice(i,1);
+                          }
+                        }
+                      }
+                    } catch(err){
+                  }
+                }
+                if (Filters[key] == "int"){
+                  sliderVals =  document.getElementById(
+                    "div_" + keyS).noUiSlider.get();
+                  try{
+                    if (key in features[0].properties){
+                    for (i = features.length - 1; i >= 0; --i){
+                      if (parseInt(features[i].properties[key])
+                          < sliderVals[0]
+                          || parseInt(features[i].properties[key])
+                          > sliderVals[1]){
+                            features.splice(i,1);
+                          }
+                        }
+                      }
+                    } catch(err){
+                    }
+                  }
+                if (Filters[key] == "real"){
+                  sliderVals =  document.getElementById(
+                    "div_" + keyS).noUiSlider.get();
+                  try{
+                    if (key in features[0].properties){
+                    for (i = features.length - 1; i >= 0; --i){
+                      if (features[i].properties[key]
+                          < sliderVals[0]
+                          || features[i].properties[key]
+                          > sliderVals[1]){
+                            features.splice(i,1);
+                          }
+                        }
+                      }
+                    } catch(err){
+                    }
+                  }
+                if (Filters[key] == "date"
+                  || Filters[key] == "datetime"
+                  || Filters[key] == "time"){
+                  try{
+                    if (key in features[0].properties){
+                      HTMLkey = key.replace(/[&\/\\#,+()$~%.'":*?<>{} ]/g, '');
+                      startdate = document.getElementById("dat_" +
+                        HTMLkey + "_date1").value.replace(" ", "T");
+                      enddate = document.getElementById("dat_" +
+                        HTMLkey + "_date2").value.replace(" ", "T");
+                      for (i = features.length - 1; i >= 0; --i){
+                        if (features[i].properties[key] < startdate
+                          || features[i].properties[key] > enddate){
+                          features.splice(i,1);
+                        }
+                      }
+                    }
+                  } catch(err){
+                  }
+                }
+              }
+            } catch(err){
+            }
+          this[lyr["options"]["layerName"]].clearLayers();
+          this[lyr["options"]["layerName"]].addData(features);
+        var i = 0;
+        layer_Vegetasititik_7.eachLayer(function(layer) {
+            var context = {
+                feature: layer.feature,
+                variables: {}
+            };
+            layer.bindTooltip((layer.feature.properties['nama_lokal'] !== null?String('<div style="color: #323232; font-size: 10pt; font-family: \'Cambria\', sans-serif;">' + layer.feature.properties['nama_lokal']) + '</div>':''), {permanent: true, offset: [-0, -16], className: 'css_Vegetasititik_7'});
+            labels.push(layer);
+            totalMarkers += 1;
+              layer.added = true;
+              addLabel(layer, i);
+              i++;
+        });
+          }
+          })
+        }
+            document.getElementById("menu").appendChild(
+                document.createElement("div"));
+            var div_deskripsi = document.createElement('div');
+            div_deskripsi.id = "div_deskripsi";
+            div_deskripsi.className= "filterselect";
+            document.getElementById("menu").appendChild(div_deskripsi);
+            sel_deskripsi = document.createElement('select');
+            sel_deskripsi.multiple = true;
+            sel_deskripsi.size = 10;
+            sel_deskripsi.id = "sel_deskripsi";
+            var deskripsi_options_str = "<option value='' unselected></option>";
+            sel_deskripsi.onchange = function(){filterFunc()};
+            deskripsi_options_str  += '<option value="**Nypa fruticans Wurmb.** atau nipah merupakan tumbuhan palma yang hidup di pesisir, muara, dan daerah pasang surut berlumpur. Nipah memiliki batang pendek di dalam tanah dan daun panjang menyirip. Tumbuhan ini berperan dalam menahan sedimen, mengurangi erosi, serta menyediakan habitat bagi biota pesisir.
+">**Nypa fruticans Wurmb.** atau nipah merupakan tumbuhan palma yang hidup di pesisir, muara, dan daerah pasang surut berlumpur. Nipah memiliki batang pendek di dalam tanah dan daun panjang menyirip. Tumbuhan ini berperan dalam menahan sedimen, mengurangi erosi, serta menyediakan habitat bagi biota pesisir.
+</option>';
+            deskripsi_options_str  += '<option value="**Rhizophora apiculata Blume** merupakan salah satu mangrove sejati dari famili Rhizophoraceae yang banyak ditemukan di pesisir, muara, dan daerah pasang surut. Ciri khasnya adalah daun tebal berhadapan dan akar tunjang yang kuat. Akar tersebut membantu menopang pohon, menangkap sedimen, serta melindungi pantai dan menjaga keseimbangan ekosistem mangrove.
+">**Rhizophora apiculata Blume** merupakan salah satu mangrove sejati dari famili Rhizophoraceae yang banyak ditemukan di pesisir, muara, dan daerah pasang surut. Ciri khasnya adalah daun tebal berhadapan dan akar tunjang yang kuat. Akar tersebut membantu menopang pohon, menangkap sedimen, serta melindungi pantai dan menjaga keseimbangan ekosistem mangrove.
+</option>';
+            deskripsi_options_str  += '<option value="**Sonneratia caseolaris** atau pedada merupakan mangrove sejati dari famili Lythraceae yang banyak ditemukan di muara sungai dan daerah pasang surut berlumpur. Ciri khasnya adalah daun tunggal, bunga besar, dan akar napas (pneumatofor). Tumbuhan ini membantu menstabilkan substrat serta melindungi kawasan pesisir.
+">**Sonneratia caseolaris** atau pedada merupakan mangrove sejati dari famili Lythraceae yang banyak ditemukan di muara sungai dan daerah pasang surut berlumpur. Ciri khasnya adalah daun tunggal, bunga besar, dan akar napas (pneumatofor). Tumbuhan ini membantu menstabilkan substrat serta melindungi kawasan pesisir.
+</option>';
+            deskripsi_options_str  += '<option value="Acanthus ilicifolius L. atau jeruju merupakan tumbuhan bawah khas kawasan mangrove dari famili Acanthaceae. Tumbuhan ini umumnya berbentuk semak dan memiliki daun berduri atau berlekuk tajam serta bunga berwarna ungu hingga kebiruan yang tumbuh pada ujung batang. Jeruju banyak ditemukan pada kawasan pasang surut, tepian sungai, dan substrat berlumpur. Keberadaannya membantu menahan sedimen, menstabilkan substrat, dan menyediakan habitat bagi berbagai organisme kecil di ekosistem mangrove.">Acanthus ilicifolius L. atau jeruju merupakan tumbuhan bawah khas kawasan mangrove dari famili Acanthaceae. Tumbuhan ini umumnya berbentuk semak dan memiliki daun berduri atau berlekuk tajam serta bunga berwarna ungu hingga kebiruan yang tumbuh pada ujung batang. Jeruju banyak ditemukan pada kawasan pasang surut, tepian sungai, dan substrat berlumpur. Keberadaannya membantu menahan sedimen, menstabilkan substrat, dan menyediakan habitat bagi berbagai organisme kecil di ekosistem mangrove.</option>';
+            deskripsi_options_str  += '<option value="Calophyllum inophyllum L. atau nyamplung merupakan pohon pesisir dari famili Calophyllaceae yang banyak ditemukan di pantai berpasir dan hutan pantai. Ciri khasnya adalah daun tebal mengilap, bunga putih dengan benang sari kuning, serta tajuk yang rindang. Akarnya membantu menstabilkan tanah dan mengurangi erosi pesisir.">Calophyllum inophyllum L. atau nyamplung merupakan pohon pesisir dari famili Calophyllaceae yang banyak ditemukan di pantai berpasir dan hutan pantai. Ciri khasnya adalah daun tebal mengilap, bunga putih dengan benang sari kuning, serta tajuk yang rindang. Akarnya membantu menstabilkan tanah dan mengurangi erosi pesisir.</option>';
+            deskripsi_options_str  += '<option value="Calophyllum inophyllum L. atau nyamplung merupakan pohon pesisir dari famili Calophyllaceae yang banyak ditemukan di pantai berpasir, kawasan pesisir, dan hutan pantai. Tumbuhan ini memiliki daun tebal dan mengilap, bunga berwarna putih dengan benang sari kuning, serta batang berkayu dengan tajuk yang rindang. Sistem perakarannya membantu menstabilkan tanah dan mengurangi erosi, sehingga nyamplung memiliki peranan penting dalam menjaga kondisi ekosistem pesisir.">Calophyllum inophyllum L. atau nyamplung merupakan pohon pesisir dari famili Calophyllaceae yang banyak ditemukan di pantai berpasir, kawasan pesisir, dan hutan pantai. Tumbuhan ini memiliki daun tebal dan mengilap, bunga berwarna putih dengan benang sari kuning, serta batang berkayu dengan tajuk yang rindang. Sistem perakarannya membantu menstabilkan tanah dan mengurangi erosi, sehingga nyamplung memiliki peranan penting dalam menjaga kondisi ekosistem pesisir.</option>';
+            deskripsi_options_str  += '<option value="Dolichandrone spathacea merupakan tumbuhan pesisir dari famili Bignoniaceae yang dapat ditemukan di kawasan mangrove, tepi sungai, dan daerah pasang surut. Tumbuhan ini memiliki bunga berbentuk terompet berwarna putih, daun majemuk menyirip, serta batang berkayu yang dapat tumbuh sebagai pohon atau semak. Keberadaannya berperan dalam menstabilkan lingkungan pesisir, menyediakan habitat bagi organisme, dan mendukung keanekaragaman hayati.">Dolichandrone spathacea merupakan tumbuhan pesisir dari famili Bignoniaceae yang dapat ditemukan di kawasan mangrove, tepi sungai, dan daerah pasang surut. Tumbuhan ini memiliki bunga berbentuk terompet berwarna putih, daun majemuk menyirip, serta batang berkayu yang dapat tumbuh sebagai pohon atau semak. Keberadaannya berperan dalam menstabilkan lingkungan pesisir, menyediakan habitat bagi organisme, dan mendukung keanekaragaman hayati.</option>';
+            deskripsi_options_str  += '<option value="Oncosperma tigillarium atau nibung merupakan jenis palma dari famili Arecaceae yang dapat ditemukan pada kawasan pesisir, rawa, tepi sungai, dan daerah berlumpur. Tumbuhan ini memiliki batang yang tumbuh berumpun dan menjadi ciri khas karena permukaannya dilengkapi duri. Daunnya panjang dan menyirip dengan banyak anak daun. Nibung berperan dalam menstabilkan tanah, mengurangi erosi, menyediakan habitat bagi organisme, serta mendukung keanekaragaman hayati di kawasan pesisir dan rawa.">Oncosperma tigillarium atau nibung merupakan jenis palma dari famili Arecaceae yang dapat ditemukan pada kawasan pesisir, rawa, tepi sungai, dan daerah berlumpur. Tumbuhan ini memiliki batang yang tumbuh berumpun dan menjadi ciri khas karena permukaannya dilengkapi duri. Daunnya panjang dan menyirip dengan banyak anak daun. Nibung berperan dalam menstabilkan tanah, mengurangi erosi, menyediakan habitat bagi organisme, serta mendukung keanekaragaman hayati di kawasan pesisir dan rawa.</option>';
+            deskripsi_options_str  += '<option value="Rhizophora apiculata Blume merupakan salah satu mangrove sejati dari famili Rhizophoraceae yang banyak ditemukan di pesisir, muara, dan daerah pasang surut. Ciri khasnya adalah daun tebal berhadapan dan akar tunjang yang kuat. Akar tersebut membantu menopang pohon, menangkap sedimen, serta melindungi pantai dan menjaga keseimbangan ekosistem mangrove.">Rhizophora apiculata Blume merupakan salah satu mangrove sejati dari famili Rhizophoraceae yang banyak ditemukan di pesisir, muara, dan daerah pasang surut. Ciri khasnya adalah daun tebal berhadapan dan akar tunjang yang kuat. Akar tersebut membantu menopang pohon, menangkap sedimen, serta melindungi pantai dan menjaga keseimbangan ekosistem mangrove.</option>';
+            deskripsi_options_str  += '<option value="Rhizophora mucronata merupakan salah satu mangrove sejati yang hidup di wilayah pasang surut, terutama pada pantai berlumpur dan kawasan muara. Akan tunjangnya membantu menopang pohon sekalgus berperan dalam menjaga kestabilan ekosistem pesisir.">Rhizophora mucronata merupakan salah satu mangrove sejati yang hidup di wilayah pasang surut, terutama pada pantai berlumpur dan kawasan muara. Akan tunjangnya membantu menopang pohon sekalgus berperan dalam menjaga kestabilan ekosistem pesisir.</option>';
+            deskripsi_options_str  += '<option value="Sonneratia caseolaris (L.) Engl. atau pedada merupakan mangrove sejati dari famili Lythraceae yang hidup di muara dan daerah pasang surut berlumpur. Ciri khasnya adalah daun tunggal, bunga besar, dan akar napas (pneumatofor). Tumbuhan ini membantu menstabilkan substrat dan melindungi kawasan pesisir.">Sonneratia caseolaris (L.) Engl. atau pedada merupakan mangrove sejati dari famili Lythraceae yang hidup di muara dan daerah pasang surut berlumpur. Ciri khasnya adalah daun tunggal, bunga besar, dan akar napas (pneumatofor). Tumbuhan ini membantu menstabilkan substrat dan melindungi kawasan pesisir.</option>';
+            sel_deskripsi.innerHTML = deskripsi_options_str;
+            div_deskripsi.appendChild(sel_deskripsi);
+            var lab_deskripsi = document.createElement('div');
+            lab_deskripsi.innerHTML = 'deskripsi';
+            lab_deskripsi.className = 'filterlabel';
+            div_deskripsi.appendChild(lab_deskripsi);
+            var reset_deskripsi = document.createElement('div');
+            reset_deskripsi.innerHTML = 'clear filter';
+            reset_deskripsi.className = 'filterlabel';
+            reset_deskripsi.onclick = function() {
+                var options = document.getElementById("sel_deskripsi").options;
+                for (var i=0; i < options.length; i++) {
+                    options[i].selected = false;
+                }
+                filterFunc();
+            };
+            div_deskripsi.appendChild(reset_deskripsi);
+        resetLabels([layer_Vegetasititik_7]);
+        map.on("zoomend", function(){
+            resetLabels([layer_Vegetasititik_7]);
+        });
+        map.on("layeradd", function(){
+            resetLabels([layer_Vegetasititik_7]);
+        });
+        map.on("layerremove", function(){
+            resetLabels([layer_Vegetasititik_7]);
+        });
+        </script>
+    </body>
+</html>
